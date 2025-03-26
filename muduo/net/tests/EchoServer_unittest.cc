@@ -9,6 +9,7 @@
 
 #include <stdio.h>
 #include <unistd.h>
+#include <bits/this_thread_sleep.h>
 
 using namespace muduo;
 using namespace muduo::net;
@@ -48,6 +49,11 @@ class EchoServer
 
   void onMessage(const TcpConnectionPtr& conn, Buffer* buf, Timestamp time)
   {
+    //=====================
+    std::this_thread::sleep_for(std::chrono::seconds(100)); // 模拟阻塞
+    LOG_INFO << "handleRead模拟耗时操作";
+    //=====================
+
     string msg(buf->retrieveAllAsString());
     LOG_TRACE << conn->name() << " recv " << msg.size() << " bytes at " << time.toString();
     if (msg == "exit\n")

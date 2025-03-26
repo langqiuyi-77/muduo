@@ -16,6 +16,7 @@
 #include <vector>
 
 #include <boost/any.hpp>
+#include <boost/lockfree/queue.hpp>
 
 #include "muduo/base/Mutex.h"
 #include "muduo/base/CurrentThread.h"
@@ -128,10 +129,12 @@ class EventLoop : noncopyable
 
   static EventLoop* getEventLoopOfCurrentThread();
 
+  void doPendingFunctors();
+
  private:
   void abortNotInLoopThread();
   void handleRead();  // waked up
-  void doPendingFunctors();
+  // void doPendingFunctors();
 
   void printActiveChannels() const; // DEBUG
 
@@ -156,8 +159,9 @@ class EventLoop : noncopyable
   ChannelList activeChannels_;
   Channel* currentActiveChannel_;
 
-  mutable MutexLock mutex_;
-  std::vector<Functor> pendingFunctors_ GUARDED_BY(mutex_);
+  // mutable MutexLock mutex_;
+  // std::vector<Functor> pendingFunctors_ GUARDED_BY(mutex_);
+  boost::lockfree::queue<Functor*> pendingFunctors_;
 };
 
 }  // namespace net

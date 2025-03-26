@@ -15,11 +15,16 @@
 #include "muduo/net/SocketsOps.h"
 #include "muduo/net/TimerQueue.h"
 
+#include <boost/lockfree/queue.hpp>
+
 #include <algorithm>
 
 #include <signal.h>
 #include <sys/eventfd.h>
 #include <unistd.h>
+#include <bits/std_thread.h>
+
+
 
 using namespace muduo;
 using namespace muduo::net;
@@ -159,9 +164,14 @@ void EventLoop::runInLoop(Functor cb)
 
 void EventLoop::queueInLoop(Functor cb)
 {
-  {
-  MutexLockGuard lock(mutex_);
-  pendingFunctors_.push_back(std::move(cb));
+  // {
+  // MutexLockGuard lock(mutex_);
+  // pendingFunctors_.push_back(std::move(cb));
+  // }
+
+  auto func = new Functor(std::move(cb));
+  while (!pendingFunctors_.push(func)) {
+      std::this_thread::yield();
   }
 
   if (!isInLoopThread() || callingPendingFunctors_)
@@ -172,8 +182,9 @@ void EventLoop::queueInLoop(Functor cb)
 
 size_t EventLoop::queueSize() const
 {
-  MutexLockGuard lock(mutex_);
-  return pendingFunctors_.size();
+  // MutexLockGuard lock(mutex_);
+  // return pendingFunctors_.size();
+  return 0;       // FIXME: 没有返回 size 的方法，查看 ref 没有使用，暂时返回 0
 }
 
 TimerId EventLoop::runAt(Timestamp time, TimerCallback cb)
@@ -253,18 +264,25 @@ void EventLoop::handleRead()
 
 void EventLoop::doPendingFunctors()
 {
-  std::vector<Functor> functors;
+  // std::vector<Functor> functors;
   callingPendingFunctors_ = true;
 
-  {
-  MutexLockGuard lock(mutex_);
-  functors.swap(pendingFunctors_);
+  // {
+  // MutexLockGuard lock(mutex_);
+  // functors.swap(pendingFunctors_);
+  // }
+
+  // for (const Functor& functor : functors)
+  // {
+  //   functor();
+  // }
+
+  Functor* f;
+  while (pendingFunctors_.pop(f)) {
+      (*f)();       // 调用
+      delete f;     // 手动释放
   }
 
-  for (const Functor& functor : functors)
-  {
-    functor();
-  }
   callingPendingFunctors_ = false;
 }
 
