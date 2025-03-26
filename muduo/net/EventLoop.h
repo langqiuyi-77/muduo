@@ -127,11 +127,12 @@ class EventLoop : noncopyable
   { return &context_; }
 
   static EventLoop* getEventLoopOfCurrentThread();
-
+  void doPendingFunctors();
+  
  private:
   void abortNotInLoopThread();
   void handleRead();  // waked up
-  void doPendingFunctors();
+  
 
   void printActiveChannels() const; // DEBUG
 

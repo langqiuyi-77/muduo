@@ -16,6 +16,9 @@ target_link_libraries(eventloopthread_unittest muduo_net)
 add_executable(eventloopthreadpool_unittest EventLoopThreadPool_unittest.cc)
 target_link_libraries(eventloopthreadpool_unittest muduo_net)
 
+add_executable(pendingfactor_throught_unittest myThroughputTest_unittest.cc)
+target_link_libraries(pendingfactor_throught_unittest muduo_net)
+
 if(BOOSTTEST_LIBRARY)
 add_executable(buffer_unittest Buffer_unittest.cc)
 target_link_libraries(buffer_unittest muduo_net boost_unit_test_framework)
